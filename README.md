@@ -100,9 +100,13 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 
 # 2. 기술 분석
 
-## 2.1. ELK(Logstash, Elasticsearch, Kibana) 스택
+## 2.1. GA(Google Analytics) 와 ELK(Logstash, Elasticsearch, Kibana) 를 선택한 이유
 
-### 2.1.1. Logstash 와 Beats
+처음에는 과거부터 데이터 분석 플랫폼으로 유명한 Hadoop, Spark 를 고려하기도 했지만
+
+## 2.2. ELK(Logstash, Elasticsearch, Kibana) 스택
+
+### 2.2.1. Logstash 와 Beats
 
 Logstash 는 <br />
 
@@ -112,25 +116,25 @@ Beats 는 <br />
 
 ... <br />
 
-### 2.1.2. Elasticsearch
+### 2.2.2. Elasticsearch
 
 Elasticsearch 는 <br />
 
 ... <br />
 
-### 2.1.3. Kibana
+### 2.2.3. Kibana
 
 Kibana 는 <br />
 
 ... <br />
 
-### 2.2. GA (Google Analytics) API
+### 2.3. GA (Google Analytics) API
 
 Google Analytics 는 <br />
 
 ... <br />
 
-GA4 는 <br />
+GA4(Google Analytics 4) 는 <br />
 
 ... <br />
 
@@ -144,13 +148,13 @@ docker-elk 리포지토리 사용하는 방법 <br />
 
 ## 3.3. Google Analytics 쿼리 횟수 제한
 
-## 3.4. Elasticsearch 에 대한 생소함
+## 3.4. Elasticsearch 쿼리에 대한 생소함
 
-## 3.5. 사용자 지정 시간 범위가 커지면 서버쪽 부하 증가
+## 3.5. 사용자 지정 시간 범위가 커지면서 예상되는 서버쪽 부하 증가
 
 ELK 에 적재한 데이터를 시간(hour) 단위로, 일(date) 단위로 데이터베이스(MongoDB)에 마이그레이션 해두기 <br />
 
-## 3.6. 데이터베이스 스키마 설계
+## 3.6. 시간단위(1 hour), 일단위(1 day)로 데이터를 적재해두는 데이터베이스 스키마 설계
 
 만능 스키마는 없다. <br />
 
