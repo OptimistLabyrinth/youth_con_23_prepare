@@ -457,15 +457,92 @@ logstash 에 도달하기 전에 logstash 에서 다루기 쉬운 형태로 데�
 
 ### 2.2.2. Elasticsearch
 
-Elasticsearch 는
+Elasticsearch 는 흔히 search engine 이라고 부른다.
+토큰 기반의 Full-Text Search 에 최적화된 NoSQL 데이터베이스이다.
 
-...
+#### 2.2.2.1. Precision 과 Recall
+
+true positives, false positives
+
+![elk-01](./images/elk-01-true-positives-false-positives.png)
+
+true negatives, false negatives
+
+![elk-02](./images/elk-02-true-negatives-false-negatives.png)
+
+precision
+
+![elk-03](./images/elk-03-precision.png)
+
+recall
+
+![elk-04](./images/elk-04-recall.png)
+
+precision 을 높이는 상황과 recall 을 높이는 상황
+precision 과 recall 사이의 상관관계
+
+![elk-05](./images/elk-05-corelation-between-precision-and-recall.png)
+
+링크 1 - https://www.youtube.com/watch?v=CCTgroOcyfM
+
+#### 2.2.2.2. Elasticsearch 가 데이터를 저장하는 방식
+
+Elasticsearch Cluster 내부 구조
+
+![elasticsearch-cluster](./images/elasticsearch-cluster.png)
+
+다른 타입의 데이터를 저장한다면 그대로 저장하지만
+텍스트 타입인 경우에는 Text Analysis 실행 후에 별도의 Inverted Index 에 저장한다.
+
+![elk-06](./images/elk-06-text-analysis.png)
+
+![elk-07](./images/elk-07-inverted-index.png)
+
+![elk-08](./images/elk-08-inverted-index-updated.png)
+
+![elk-09](./images/elk-09-new-token-added-to-inverted-index.png)
+
+![elk-10](./images/elk-10-optimal-for-full-text-search.png)
+
+![elk-11](./images/elk-11-keyword-doc-values.png)
+
+#### 2.2.2.3. 검색 결과에 보이는 Score
+
+Score 는 어떤 도큐멘트가 특정한 쿼리와 얼마나 연관성 있는지를 보여주는 지표이다.
+Score 는 개별 도큐멘트마다의 hit 개수에 따라서 달라진다.
+
+Score 를 계산과 관련해서 등장하는 중요한 두 개의 용어는 단어 빈도(Term Frequency, TF), 역 문서 빈도(Inverse Document Frequency, IDF)이다.
+
+Term Frequency 는 하나의 도큐멘트에서 검색 키워드가 자주 등장할수록 해당 도뮤켄트는 연관성이 높다는 가정에서 출발한다.
+예를 들어서 "Elasticsearch" 를 검색한다고 가정해보자.
+
+(1) We will discuss **Elasticsearch** at the next Big Data Conference.
+(2) Tuesday the **Elasticsearch** team will gather to answer questions about **Elasticsearch** from people who are interested in **Elasticsearch**.
+
+여기서 (1)번 문장의 TF = 1 이고 (2)번 문장의 TF = 3 이 된다.
+
+Inverse Document Frequency 는 여러개의 도큐멘트에 걸쳐서 등장하는 단어일수록 덜 중요하다는 생각에서 출발한다.
+
+(1) We user Elasticsearch to power **the** search for our website.
+(2) **The** developers like Elasticsearch so far.
+(3) **The** scoring of documents is calculated by **the** scoring formula.
+
+전체 도큐멘트가 총 세 개라고 가정한다면
+이 세 개 중에서 Elasticsearch 를 포함하는 도큐멘트는 (1), (2) 두 개이므로 Elasticsearch 의 IDF = 2 이다.
+세 개 중에서 the 라는 단어가 보이는 도큐멘트는 (1), (2), (3) 이므로 the 의 IDF = 3 이 된다.
+IDF 관점에서 어떤 단어가 중복해서 등장한다고 하더라도 가중치가 높아지는 것은 아니다.
+
+이렇게 TF, IDF 정보를 바탕으로 특정한 계산 공식에 따라서 score 를 계산하게 되고
+이 score 가 Elasticsearch 에서 검색결과의 기본적인 정렬 기준이 된다.
 
 ### 2.2.3. Kibana
 
 Kibana 는
 
 ...
+
+링크 1 - Better Visualization in Kibana -> https://www.youtube.com/watch?v=g0TQrMv37jM
+링크 1 - Visualization Theory and Vega Charts -> https://www.youtube.com/watch?v=9uAKdpBCeuA
 
 # 3. 구현 과정에서 마주친 어려움
 
@@ -493,7 +570,7 @@ docker-elk 는 누구든 ELK 를 도커 컨테이너 환경에 손쉽게 구축�
 
 "Usage" 부분을 잘 읽어보면
 ```bash
-$ docker-compose up set
+$ docker-compose up setup
 $ docker-compose up
 ```
 이렇게 되어 있는데,
@@ -507,10 +584,11 @@ event_type: 어떤 종류의 이벤트가 발생했는지 표시하는 필드
 
 ## 3.4. Elasticsearch 쿼리로 Aggregation 처리하기
 
+통계 및 분석 관점에서는 (1) Frequency, (2) Latency 가 중요한 판단 기준이 된다.
+
 ## 3.5. 사용자 지정 시간 범위가 커지면서 예상되는 서버쪽 부하 증가
 
 ELK 에 적재한 데이터를 시간(hour) 단위로, 일(date) 단위로 데이터베이스(MongoDB)에 마이그레이션 해두기
-통계 및 분석 관점에서는 (1) Frequency, (2) Latency 가 중요한 판단 기준이 된다.
 
 ## 3.6. 시간단위(1 hour), 일단위(1 day)로 데이터를 적재해두는 데이터베이스 스키마 설계
 
@@ -521,10 +599,11 @@ Visitor 영역과 Content 영역에 대한 통계정보는 데이터 수집(aggr
 Visitor 에서는 사용자가 기준점은 아니다.
 메트릭에 따라서는 사용자 타입을 구분하는 것이 중요할 수도 있지만
 사용자 관련 이벤트 전체에 대해서 aggregate 한 결과를 보여주면 된다.
+
 ### 3.6.2. 컨텐츠(Content)에 대한 Analytics
 
 Content 에서는 통계 및 분석 기준을 한 가지 이상 추가해야 한다.
-컨텐츠마다의 aggregation 실행한 결과가 필요하므로 group by content id 를 해야한다.
+컨텐츠마다의 aggregation 실행한 결과가 필요하므로 group by content 를 해야한다.
 컨텐츠가 속한 카테고리를 기준으로 aggregation 실행한 결과도 필요하므로 group by category 를 해야한다.
 
 ## 3.7. 다중 타임존 지원 요구사항
