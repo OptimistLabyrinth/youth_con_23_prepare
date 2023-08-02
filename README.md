@@ -106,9 +106,9 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 
 # 2. 기술 분석
 
-## 2.1. ELK(Logstash, Elasticsearch, Kibana) 를 선택한 이유
+## 2.1. ELK(Elasticsearch, Logstash, Kibana) 를 선택한 이유
 
-처음에는 과거부터 데이터 분석 플랫폼으로 유명한 Hadoop, Spark 를 고려하기도 했지만 결국에는 LogStash, Elasticsearch, Kibana 를 선택헀다.
+처음에는 과거부터 데이터 분석 플랫폼으로 유명한 Hadoop, Spark 를 고려하기도 했지만 결국에는 Elasticsearch, LogStash, Kibana 를 선택헀다.
 
 링크 1 - https://thecustomizewindows.com/2017/02/apache-hadoop-spark-vs-elasticsearch-elk-stack/
 
@@ -401,7 +401,7 @@ Column-Oriented Database 에서 가장 이슈가 되는 것은 여러개의 컬�
 | Aggregation isn't efficient                | Amazing for aggregation                    |
 | Appropriate for queries with multi-columns | Inefficient queries with multi-columns     |
 
-## 2.2. ELK(Logstash, Elasticsearch, Kibana) 스택
+## 2.2. ELK(Elasticsearch, Logstash, Kibana) 스택
 
 ### 2.2.1. Logstash 와 Beats
 
@@ -552,7 +552,7 @@ Kibana 는
 User 서비스, Content 서비스가 API 수신
 -> User 서비스, Content 서비스에서 Logstash 에 이벤트 기반의 로그 데이터 전송
 -> Logstash 에서 filter 를 거쳐서 결과적으로 얻어낸 최종 형태로 전달한 데이터를 Elasticsearch 에 저장
--> 1시간 단위로 Elasticsearch 에 저장해뒀던 로그를 aggregate 해서 analytics 데이터베이스에 저장
+-> Elasticsearch 에 저장해뒀던 로그를 1시간 단위로 aggregate 해서 analytics 데이터베이스에 저장
 
 [ API 구현 ]
 Analytics 서비스에 API 요청이 발생
@@ -564,6 +564,8 @@ Analytics 서비스에 API 요청이 발생
 개발 과정에서도 Docker 를 사용하면 development, staging, production 환경 간의 호환성을 크게 해치지 않을 수 있다.
 
 **[docker-elk](https://github.com/deviantony/docker-elk) 리포지토리 사용하는 방법**
+
+링크 - https://github.com/deviantony/docker-elk
 
 docker-elk 는 누구든 ELK 를 도커 컨테이너 환경에 손쉽게 구축할 수 있도록
 최소한의 configuration 만을 제공하는 git 리포지토리이다.
@@ -673,3 +675,7 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
     }
 }
 ```
+
+## 3.8. 통계성 API 서버에 장애가 발생했을때 fallback 처리 방식
+
+## 3.9. Analytics 데이터를 다룰때 데이터 보정, 데이터 퀄리티 관리 방식
