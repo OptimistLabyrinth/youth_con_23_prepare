@@ -2,9 +2,9 @@
 
 # 0. 목차
 
--> [요구조건 분석](#1-요구조건-분석)
--> [기술 선택](#2-기술-분석)
--> [마주친 어려움과 해결책](#3-구현-과정에서-마주친-어려움)
+* [요구조건 분석](#1-요구조건-분석)
+* [기술 선택](#2-기술-분석)
+* [구현 과정에서 마주친 어려움과 해결책](#3-마주친-어려움과-해결책)
 
 # 1. 요구조건 분석
 
@@ -16,7 +16,7 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 여기에는 크게 세 종류 이상의 도메인이 있다.
 (1) 컨텐츠 - content
 (2) 컨텐츠를 업로드하는 사용자 - uploader
-(3) 컨텐츠를 즐기느 사용자 - viewer or visitor
+(3) 컨텐츠를 즐기는 사용자 - viewer or visitor
 
 ### 1.2. Analytics API 요구조건
 
@@ -31,20 +31,16 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 -> 시작 시점
 -> 종료 시점
 -> 조회 범위는 최대 1년으로 한정
--> 데이터는 사용자가 존재하는 timezone 기준으로 보여줘야 한다.
+-> 꺾은선 그래프의 X축 데이터는 사용자가 존재하는 timezone 기준으로 보여줘야 한다.
 
 (2) 사용자 방문에 대한 통계 정보를 숫자로 확인하는 경우
-
-다음과 같은 정보가 필요하다.
 
 -> 총 방문자 수 (total)
 -> 현재 기간 내 총 방문자 수 (current total)
 -> 이전 기간 내 총 방문자 수 (previous total)
 -> 방문자 수 증감률 (change rate)
 
-(3) 사용자 방문에 대한 통계 추이를 차트(그래프)로 확인하는 경우
-
-다음과 같은 정보가 필요하다.
+(3) 사용자 방문에 대한 통계 추이를 꺾은선 그래프로 확인하는 경우
 
 -> 단위시간 별 방문자 수
 
@@ -76,7 +72,7 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 -> 시작 시점
 -> 종료 시점
 -> 조회 범위는 최대 1년으로 한정
--> 데이터는 사용자가 존재하는 timezone 기준으로 보여줘야 한다.
+-> 꺾은선 그래프의 X축 데이터는 사용자가 존재하는 timezone 기준으로 보여줘야 한다.
 
 (2) 컨텐츠 조회수 통계 정보를 숫자로 확인하는 경우
 
@@ -85,7 +81,7 @@ SNS 와 같이 많은 사람들이 컨텐츠를 즐기며 서로 상호작용 �
 -> 이전 기간 내 총 조회수 (previous total)
 -> 조회수 증감률 (change rate)
 
-(3) 컨텐츠 조회수 통계 추이를 차트(그래프)로 확인하는 경우
+(3) 컨텐츠 조회수 통계 추이를 꺾은선 그래프로 확인하는 경우
 
 -> 단위시간 별 컨텐츠 조회수
 
@@ -126,282 +122,18 @@ Elasticsearch 는 상대적으로 효율적인 Full-Text Search 가 가능한 Se
 Analytics, Visualization 쪽에 가깝기 때문에
 이쪽으로 계속해서 연구개발하고 있는 ELK 를 선택한다.
 
-두 번째 이유에서 등장하는 Wide Column Database 에 대해서 간단하게 살펴보자
-
-링크 1 - https://blog.logrocket.com/nosql-wide-column-stores-guide/
-링크 1 - https://www.youtube.com/watch?v=8KGVFB3kVHQ
-링크 1 - https://www.youtube.com/watch?v=Vw1fCeD06YI
-
-저장하려는 데이터는 다음과 같다.
-
-| Row Key | id | first_name | last_name | ssn | salary | dob | title | joined |
-|--------|----|------------|-----------|-----|--------|-----|-------|--------|
-| 1001   | 1  | John       | Smith     | 111 | 101,000 | 1991-01-01 | eng | 2011-01-01 |
-| 1002   | 2  | Kary       | White     | 222 | 102,000 | 1992-02-02 | mgr | 2012-02-01 |
-| 1003   | 3  | Norman     | Freeman   | 333 | 103,000 | 1993-03-03 | mkt | 2013-03-01 |
-| 1004   | 4  | Noel       | Smithson  | 444 | 104,000 | 1994-04-04 | adm | 2014-04-01 |
-| 1005   | 5  | Dar        | Sol       | 555 | 105,000 | 1995-05-05 | adm | 2015-05-01 |
-| 1006   | 6  | Yan        | Thee      | 666 | 106,000 | 1996-06-06 | mkt | 2016-06-01 |
-| 1007   | 7  | Hasan      | Ali       | 777 | 107,000 | 1997-07-07 | acc | 2017-07-01 |
-| 1008   | 8  | Ali        | Bilal     | 888 | 108,000 | 1998-08-08 | acc | 2018-08-01 |
-
-### 2.1.1. Row-Oriented Database
-
-RDBMS 에서 위의 데이터를 디스크에 저장하는 방식은 다음과 같다.
-
-```text
-1001, 1, John, Smith, 111, 101000, 1991-01-01, eng, 2011-01-01 |||
-1002, 2, Kary, White, 222, 102000, 1992-02-02, mgr, 2012-02-01
-```
-```text
-1003, 3, Norman, Freeman, 333, 103000, 1993-03-03, mkt, 2013-03-01 |||
-1004, 4, Noel, Smithson, 444, 104000, 1994-04-04, adm, 2014-04-01
-```
-```text
-1005, 5, Dar, Sol, 555, 105000, 1995-05-05, adm, 2015-05-01 |||
-1006, 6, Yan, Thee, 666, 106000, 1996-06-06, mkt, 2016-06-01
-```
-```text
-1007, 7, Hasan, Ali, 777, 107000, 1997-07-07, acc, 2017-07-01 |||
-1008, 8, Ali, Bilal, 888, 108000, 1998-08-08, acc, 2018-08-01
-```
-
-[1] RDBMS 에서 다음과 같은 select 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT first_name from EMPLOYEE where ssn = 666;
-```
-
-디스크에서 조건에 맞는 데이터를 찾아가는 방식은 다음과 같다.
-
-```text
-데이터 확인
-
-1001, 1, John, Smith, 111, 101000, 1991-01-01, eng, 2011-01-01 |||
-1002, 2, Kary, White, 222, 102000, 1992-02-02, mgr, 2012-02-01
-
-여기에 없음 통과
-다음 데이터 확인
-
-1003, 3, Norman, Freeman, 333, 103000, 1993-03-03, mkt, 2013-03-01 |||
-1004, 4, Noel, Smithson, 444, 104000, 1994-04-04, adm, 2014-04-01
-
-여기에 없음 통과
-다음 데이터 확인
-
-1005, 5, Dar, Sol, 555, 105000, 1995-05-05, adm, 2015-05-01 |||
-1006, 6, Yan, Thee, 666, 106000, 1996-06-06, mkt, 2016-06-01
-
-여기에서 찾음 - 완료!
-```
-
-[2] RDBMS 에서 다음과 같은 select 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT * from EMPLOYEE where id = 3;
-```
-
-디스크에서 조건에 맞는 데이터를 찾아가는 방식은 다음과 같다.
-
-```text
-데이터 확인
-
-1001, 1, John, Smith, 111, 101000, 1991-01-01, eng, 2011-01-01 |||
-1002, 2, Kary, White, 222, 102000, 1992-02-02, mgr, 2012-02-01
-
-여기에 없음 통과
-다음 데이터 확인
-
-1003, 3, Norman, Freeman, 333, 103000, 1993-03-03, mkt, 2013-03-01 |||
-1004, 4, Noel, Smithson, 444, 104000, 1994-04-04, adm, 2014-04-01
-
-여기에서 찾음 - 완료!
-```
-
-[3] RDBMS 에서 다음과 같은 aggregate 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT SUM(salary) from EMPLOYEE;
-```
-
-결과값을 응답하기 위해서 다음과 같은 과정을 거친다.
-
-```text
-데이터 확인
-
-1001, 1, John, Smith, 111, 101000, 1991-01-01, eng, 2011-01-01 |||
-1002, 2, Kary, White, 222, 102000, 1992-02-02, mgr, 2012-02-01
-
-여기에서 salary 값 101000, 102000 확인 완료
-다음 데이터 확인
-
-1003, 3, Norman, Freeman, 333, 103000, 1993-03-03, mkt, 2013-03-01 |||
-1004, 4, Noel, Smithson, 444, 104000, 1994-04-04, adm, 2014-04-01
-
-여기에서 salary 값 103000, 104000 확인 완료
-다음 데이터 확인
-
-1005, 5, Dar, Sol, 555, 105000, 1995-05-05, adm, 2015-05-01 |||
-1006, 6, Yan, Thee, 666, 106000, 1996-06-06, mkt, 2016-06-01
-
-여기에서 salary 값 105000, 106000 확인 완료
-다음 데이터 확인
-
-1007, 7, Hasan, Ali, 777, 107000, 1997-07-07, acc, 2017-07-01 |||
-1008, 8, Ali, Bilal, 888, 108000, 1998-08-08, acc, 2018-08-01
-
-여기에서 salary 값 107000, 108000 확인 완료
-마지막 데이터에 도달 - 완료!
-```
-
-RDBMS 에서는 성능 향상을 위해서
-캐시 설정, 인덱스 설정, Materialized View 사용 등의 전략을 채택할 수 있다.
-
-**Materialized View** 에 대한 설명
-
-링크 1 - https://docs.snowflake.com/en/user-guide/views-materialized
-링크 1 - https://materialize.com/blog/why-use-a-materialized-view/
-링크 1 - https://www.youtube.com/watch?v=kHLIDnA5x3g
-
-특정한 쿼리의 실행 결과를 미리 저장해둘 수 있는 방법이다. 특정한 쿼리에 대한 일종의 캐시 역할을 한다.
-다음과 같은 조건에서 Materialized View 사용을 고려해보면 좋다.
-
-* base table 과 비교했을때 쿼리 결과가 아주 적은 수의 row 만 포함하는 경우
-* 쿼리 결과를 얻어내기 위해서 복잡한 연산을 거쳐야 한다거나 높은 부하를 요구하는 경우 (예시, aggregation)
-* base table 이 변화가 적은 경우에
-
-Materialized View 테이블에 대해서 얼만큼의 주기로 refresh 를 실행할지 고민이 필요하다.
-base table 에 저장한 데이터에 UPDATE 가 자주 일어난다면 View 사용을 권장한다.
-
-### 2.1.2. Column-Oriented Database
-
-Column-Oriented NoSQL Database 에서는 아까 위에서 본 데이터를 다음과 같은 방식으로 저장한다.
-
-```text
-1:1001, 2:1002, 3:1003, 4:1004, 5:1005, 6:1006, 7:1007, 8:1008
-```
-```text
-John:1001, Kary: 1002, Norman:1003, Noel:1004, Dar:1005, Yan:1006, Hasan:1007, Ali:1008
-```
-```text
-Smith:1001, White:1002, Freeman:1003, Sol:1004, Thee:1005, Sol:1006, Ali:1007, Bilal:1008
-```
-```text
-111:1001, 222:10002, 333:1003, 444:1004, 555:1005, 666:1006, 777:1007, 888:1008
-```
-```text
-101000:1001, 102000:1002, 103000:10003, 104000:1004, 105000:1005, 106000:10006, 107000:1007, 108000:10800
-```
-```text
-1991-01-01:1001, 1992-02-02:1002, 1993-03-03:1003, 1994-04-04:1004, 1995-05-05:1005,
-1996-06-06:1006, 1997-07-07:1007, 1998-08-08:1008
-```
-```text
-eng:1001, mgr:1002, mkt:1003, adm:1004, adm:1005, mkt:1006, acc:1007, acc:1008
-```
-```text
-2011-01-01:1001, 2012-02-01:1002, 2013-03-01:1003, 2014-04-01:1004, 2015-05-01:1005,
-2016-06-01:1006, 2017-07-01:1007, 2018-08-01:1008
-```
-
-[1] Column-Oriented Database 에서 다음과 같은 select 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT first_name from EMPLOYEE where ssn = 666;
-```
-
-디스크에서 조건에 맞는 데이터를 찾아가는 방식은 다음과 같다.
-
-```text
-데이터 확인
-
-111:1001, 222:10002, 333:1003, 444:1004, 555:1005, 666:1006, 777:1007, 888:1008
-
-여기에서 찾음 - Row Key 는 1006
-first_name 데이터 확인
-
-John:1001, Kary: 1002, Norman:1003, Noel:1004, Dar:1005, Yan:1006, Hasan:1007, Ali:1008
-
-여기에서 찾음 - 완료!
-```
-
-[2] Column-Oriented Database 에서 다음과 같은 aggregate 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT * from EMPLOYEE where id = 3;
-```
-
-디스크에서 조건에 맞는 데이터를 찾아가는 방식은 다음과 같다.
-
-```text
-데이터 확인
-
-1:1001, 2:1002, 3:1003, 4:1004, 5:1005, 6:1006, 7:1007, 8:1008
-
-여기에서 찾음 - Row Key 는 1003
-나머지 데이터 확인
-
-John:1001, Kary: 1002, Norman:1003, Noel:1004, Dar:1005, Yan:1006, Hasan:1007, Ali:1008
-
-Smith:1001, White:1002, Freeman:1003, Sol:1004, Thee:1005, Sol:1006, Ali:1007, Bilal:1008
-
-111:1001, 222:10002, 333:1003, 444:1004, 555:1005, 666:1006, 777:1007, 888:1008
-
-101000:1001, 102000:1002, 103000:10003, 104000:1004, 105000:1005, 106000:10006, 107000:1007, 108000:10800
-
-1991-01-01:1001, 1992-02-02:1002, 1993-03-03:1003, 1994-04-04:1004, 1995-05-05:1005,
-1996-06-06:1006, 1997-07-07:1007, 1998-08-08:1008
-
-eng:1001, mgr:1002, mkt:1003, adm:1004, adm:1005, mkt:1006, acc:1007, acc:1008
-
-2011-01-01:1001, 2012-02-01:1002, 2013-03-01:1003, 2014-04-01:1004, 2015-05-01:1005,
-2016-06-01:1006, 2017-07-01:1007, 2018-08-01:1008
-
-각 column 마다 Row Key 가 1003 인 데이터 찾음 - 완료!
-```
-
-[3] Column-Oriented Database 에서 다음과 같은 aggregate 쿼리를 실행한다고 가정해보자.
-
-```sql
-SELECT SUM(salary) from EMPLOYEE;
-```
-
-결과값을 응답하기 위해서 다음과 같은 과정을 거친다.
-
-```text
-데이터 확인
-
-101000:1001, 102000:1002, 103000:10003, 104000:1004, 105000:1005, 106000:10006, 107000:1007, 108000:10800
-
-모든 salary 값 확인 - 완료!
-```
-
-Column-Oriented Database 에서는 성능 향상을 위해서
-캐시 설정, 인덱스 설정, Column Family 사용 등의 전략을 채택할 수 있다.
-
-**Column Family** 에 대한 설명
-
-링크 1 - https://blog.logrocket.com/nosql-wide-column-stores-guide/
-
-![column-family-01](./images/column-family-01.png)
-
-Column-Oriented Database 에서 가장 이슈가 되는 것은 여러개의 컬럼에 걸쳐서 쿼리를 실행하는 경우이다.
-이를 위해서 여러개의 컬럼을 하나의 도큐먼트 또는 하나의 그룹으로 관리할 수 있도록 하는 전략이다.
-
-하나의 row key 에 대해서 여러개의 column 을 묶어서 한번에 디스크에 저장하면
-여러개의 컬럼에 걸쳐있는 쿼리를 효율적으로 처리할 수 있다.
-
-### 2.1.3. 두 가지 한 눈에 비교하기
-
-| Row-Oriented | Column-Oriented |
-|--------------------------------------------|--------------------------------------------|
-| Optimal for read/write                     | Writes are slower                          |
-| OLTP (Online Transactional Processing)     | OLAP (Online Analytical Processing)        |
-| Compression isn't efficient                | Compress greatly                           |
-| Aggregation isn't efficient                | Amazing for aggregation                    |
-| Appropriate for queries with multi-columns | Inefficient queries with multi-columns     |
-
 ## 2.2. ELK(Elasticsearch, Logstash, Kibana) 스택
+
+데이터 분석은 크게 보아서 다음과 같은 세 단계를 거친다.
+
+Input - Data Processing - Output
+
+ELK 에서는
+Logstash 가 Input 에 해당하고
+Elasticsearch 가 Data Processing 이고
+Kibana 가 Output 에 해당한다.
+
+L -> E -> K 순서로 하나씩 살펴보자.
 
 ### 2.2.1. Logstash 와 Beats
 
@@ -410,13 +142,9 @@ Column-Oriented Database 에서 가장 이슈가 되는 것은 여러개의 컬�
 ![logstash-01](./images/logstash-01.png)
 
 Logstash 는 크게 보아서 input - filter - output 세 단계로 동작한다.
-logstash 를 실행하는 가장 간단한 명령어는 다음과 같다.
 
-```bash
-bin/logstash -e 'input { stdin { } } output { stdout {} }'
-```
-
-input, output 은 반드시 명시해야 하고 filter 는 필요한 경우에 지정하면 된다.
+input, output 필터는 반드시 명시해야하고
+filter 는 필요한 경우에 선택적으로 지정하면 된다.
 
 input 으로 가능한 항목은 beats, file, syslog, redis, kafka, http, tcp, udp, websocket 등등 아주 다양하다
 링크 1 - https://www.elastic.co/guide/en/logstash/current/input-plugins.html
@@ -446,9 +174,9 @@ output 으로 가능한 항목은 elasticsearch, file, graphite, statsd, cloudwa
 
 Beats 를 사용하는 경우 다음과 같은 이점이 생긴다.
 
-[1] 전송하는 데이터를 극도로 경량화할 수 있다.
+[1] 전송하는 데이터를 경량화한다.
 
-[2] 전송하려는 데이터가 어떤 형태이든 일정한 형식으로 손쉽게 정제할 수 있다.
+[2] 전송하려는 데이터가 어떤 형태이든 일정한 형식으로 정제할 수 있다.
 
 세상의 다양한 input, output 은 저마다의 데이터 포맷을 갖는다.
 logstash 에서 filter 를 아무리 정교하게 만들더라도 세상의 온갖 데이터를 다루기에는 한계가 있다.
@@ -457,94 +185,177 @@ logstash 에 도달하기 전에 logstash 에서 다루기 쉬운 형태로 데�
 
 ### 2.2.2. Elasticsearch
 
-Elasticsearch 는 흔히 search engine 이라고 부른다.
-토큰 기반의 Full-Text Search 에 최적화된 NoSQL 데이터베이스이다.
-
-#### 2.2.2.1. Precision 과 Recall
-
-true positives, false positives
-
-![elk-01](./images/elk-01-true-positives-false-positives.png)
-
-true negatives, false negatives
-
-![elk-02](./images/elk-02-true-negatives-false-negatives.png)
-
-precision
-
-![elk-03](./images/elk-03-precision.png)
-
-recall
-
-![elk-04](./images/elk-04-recall.png)
-
-precision 을 높이는 상황과 recall 을 높이는 상황
-precision 과 recall 사이의 상관관계
-
-![elk-05](./images/elk-05-corelation-between-precision-and-recall.png)
-
-링크 1 - https://www.youtube.com/watch?v=CCTgroOcyfM
-
-#### 2.2.2.2. Elasticsearch 가 데이터를 저장하는 방식
-
-Elasticsearch Cluster 내부 구조
+#### 2.2.2.1. elasticsearch 기본적인 용어 정리
 
 ![elasticsearch-cluster](./images/elasticsearch-cluster.png)
 
-다른 타입의 데이터를 저장한다면 그대로 저장하지만
-텍스트 타입인 경우에는 Text Analysis 실행 후에 별도의 Inverted Index 에 저장한다.
+**document**: 개별 데이터 묶음. RDBMS 에서의 튜플 또는 행(row)과 비슷하다.
+**index**: 여러 도큐먼트 묶음. RDBMS 에서의 테이블과 비슷하다.
+**node**: 여러 인덱스 묶음.
+**cluster**: 여러 노드의 묶음
 
-![elk-06](./images/elk-06-text-analysis.png)
+샤드, 레플리카 구성도 어렵지 않게 가능함
 
-![elk-07](./images/elk-07-inverted-index.png)
+#### 2.2.2.2. elasticsearch 쿼리 구조 예시
 
-![elk-08](./images/elk-08-inverted-index-updated.png)
+```javascript
+// my_elastic_index_* 는 탐색 대상 인덱스를 가리킨다. wildcard 사용 가능
+// _search 는 실행하려는 명령의 종류를 가리킨다.
+GET my_elastic_index_*/_search
+{
+    query: { // 쿼리 조건문. where 와 동일한 의미
+        match: {
+            "field_name": "these are my words to look for"
+        },
+    },
+    from: 50, // skip 과 동일한 의미
+    size: 100, // limit 과 동일한 의미
+    sort: [
+        "_score", // 오름차순 정렬
+        { "my_field" : "desc" } // 내림차순 정렬
+    ],
+    _source: [ // 결과값에 보이려는 필드를 나열. select 와 비슷한 의미
+        "my_field_02",
+        "another_field.keyword"
+    ],
+    // aggregation 쿼리
+    // query 조건과 aggregation 을 동시에 사용하면 query 에서 필터링된 결과값만 aggregation 결과에 포함된다.
+    aggs: {
+        "my_aggregation_name": {
+            terms: { // group by 쿼리
+                field: "my_field_name"
+            },
+            aggs: { // nested aggregation 쿼리
+                "nested_aggregation_name": {
+                    sum: { field: "countable_field" }
+                }
+            }
+        }
+    }
+}
+```
 
-![elk-09](./images/elk-09-new-token-added-to-inverted-index.png)
+#### 2.2.2.3. Elasticsearch 가 텍스트 데이터를 저장하는 방식
 
-![elk-10](./images/elk-10-optimal-for-full-text-search.png)
+![elk-06](./images//elk-06-tokenization-normalization.png)
 
-![elk-11](./images/elk-11-keyword-doc-values.png)
+텍스트 데이터를 입력하면 elasticsearch 는 위와 같은 과정을 거쳐서 데이터를 가공 및 저장한다.
 
-#### 2.2.2.3. 검색 결과에 보이는 Score
+크게 Tokenization, Normalization 두 가지 범주의 행위로 분류할 수 있다.
 
-Score 는 어떤 도큐멘트가 특정한 쿼리와 얼마나 연관성 있는지를 보여주는 지표이다.
-Score 는 개별 도큐멘트마다의 hit 개수에 따라서 달라진다.
+Tokenization 은 하나의 긴 텍스트, 긴 문장을 작은 chunk 로 나눠서 관리하기 쉽도록 만드는 것을 의미한다.
+일반적으로는 빈 칸(space)을 구분자로 해서 단어가 곧 토큰이 된다.
 
-Score 를 계산과 관련해서 등장하는 중요한 두 개의 용어는 단어 빈도(Term Frequency, TF), 역 문서 빈도(Inverse Document Frequency, IDF)이다.
+Normalization 에는 아주 다양한 작업들을 포함할 수 있다.
+-> lowercase: 개별 토큰을 일관성있게 소문자로 만들기 (Quick 이라고 검색어를 입력해도 quick 을 검색 결과에 포함)
+-> stemming: 어근분석. fox 와 foxes 는 거의 같은 단어이지만 파생형태이므로 서로 다르지 않다고 처리
+-> synonyms: 동의어 간의 연관관계를 통해서 보다 정확도 증대
+-> n-gram: 여러가지 특징과 장단점이 있지만 대표적으로는 문맥 상에서 토큰에 대한 적절한 해석을 제공
 
-Term Frequency 는 하나의 도큐멘트에서 검색 키워드가 자주 등장할수록 해당 도뮤켄트는 연관성이 높다는 가정에서 출발한다.
-예를 들어서 "Elasticsearch" 를 검색한다고 가정해보자.
+![elk-07](./images/elk-07-text-analysis.png)
 
-(1) We will discuss **Elasticsearch** at the next Big Data Conference.
-(2) Tuesday the **Elasticsearch** team will gather to answer questions about **Elasticsearch** from people who are interested in **Elasticsearch**.
+여러개의 단어로 구성된 문장을 입력하는 경우
+elasticsearch 는 일정한 구분자를 기준으로 토큰으로 나눈다.
 
-여기서 (1)번 문장의 TF = 1 이고 (2)번 문장의 TF = 3 이 된다.
+![elk-08](./images/elk-08-inverted-index.png)
 
-Inverse Document Frequency 는 여러개의 도큐멘트에 걸쳐서 등장하는 단어일수록 덜 중요하다는 생각에서 출발한다.
+이렇게 토큰화한 결과값을 바탕으로 inverted index 정보를 저장한다.
+어떤 토큰이 어떤 도큐먼트에 등장하는지 확인하는 효율적인 방법을 제공한다.
 
-(1) We user Elasticsearch to power **the** search for our website.
-(2) **The** developers like Elasticsearch so far.
-(3) **The** scoring of documents is calculated by **the** scoring formula.
+![elk-09](./images/elk-09-inverted-index-updated.png)
 
-전체 도큐멘트가 총 세 개라고 가정한다면
-이 세 개 중에서 Elasticsearch 를 포함하는 도큐멘트는 (1), (2) 두 개이므로 Elasticsearch 의 IDF = 2 이다.
-세 개 중에서 the 라는 단어가 보이는 도큐멘트는 (1), (2), (3) 이므로 the 의 IDF = 3 이 된다.
-IDF 관점에서 어떤 단어가 중복해서 등장한다고 하더라도 가중치가 높아지는 것은 아니다.
+새로운 문장을 입력하면 해당 문장을 똑같이 토큰화한 후에 inverted index 를 갱신한다.
+만약 단어가 이미 역인덱스 테이블에 존재한다면 도큐먼트 id 만 추가한다.
 
-이렇게 TF, IDF 정보를 바탕으로 특정한 계산 공식에 따라서 score 를 계산하게 되고
-이 score 가 Elasticsearch 에서 검색결과의 기본적인 정렬 기준이 된다.
+![elk-10](./images/elk-10-new-token-added-to-inverted-index.png)
+
+또다시 새로운 문장을 입력하고
+여기서 새로운 토큰을 발견한다면 invert index 에 엔트리를 추가한다.
+
+![elk-11](./images/elk-11-optimal-for-full-text-search.png)
+
+엘라스틱 서치가 Full-Text Search 에서 높은 성능을 보이는 이유는
+이렇게 만든 inverted index 를 기반으로 토큰을 검색하기 때문이다.
+
+![elk-12](./images/elk-12-keyword-doc-values.png)
+
+문자열 타입의 필드에는 여러가지 타입이 있는 그 중에 keyword 라는 특수한 프로퍼티가 있다.
+term 이라는 완전 일치 연산에 최적화된 데이터 타입이다.
+
+#### 2.2.2.4. elasticsearch 에서 aggregation 쿼리하기
+
+aggregation 이 필요한 경우는 다음과 같은 질문에 답을 해야할 때이다.
+
+* 웹사이트에서 사용자들의 평균 체류 시간은 얼마인가요?
+* 모든 구매 내역을 기반으로 볼 때 기업 입장에서 어떤 고객들이 가장 가치있는 사람들일까?
+* 네트워크 망에서 대용량 파일의 기준을 어떤 크기를 기준으로 삼는 것이 좋을까?
+* 각각의 카테고리마다 몇 개의 상품이 등록되어 있을까?
+
+elasticsearch 에서 aggregation 의 특징
+
+-> 여러번 중첩이 가능하다
+
+```javascript
+GET my_elastic_index/_search
+{
+    aggs: {
+        "my_aggregation_name": {
+            terms: { // group by 쿼리
+                "my_field_name": "value_to_find"
+            },
+            aggs: { // nested aggregation 쿼리
+                "nested_aggregation_name": {
+                    sum: { field: "countable_field" }
+                }
+            }
+        }
+    }
+}
+```
+
+-> 한번의 쿼리에서 여러개의 aggregation 요청을 통시에 할 수 있다.
+
+```javascript
+GET my_elastic_index/_search
+{
+    aggs: {
+        "my_aggregation_name_01": {
+            terms: {
+                field: "my_field_name"
+            },
+            aggs: { // nested aggregation 쿼리
+                "nested_aggregation_name": {
+                    sum: { field: "countable_field" }
+                }
+            }
+        },
+        "my_aggregation_name_02": {
+            terms: {
+                field: "my_filed_to_search"
+            },
+            aggs: {
+                "my_field_to_sum": { sum: { field: "accumulated_field" } },
+                "my_field_to_average": { avg: { field: "averaged_field" } },
+                "my_field_to_max": { max: { field: "field_to_get_max" } }
+            }
+        }
+    }
+}
+```
+
+-> aggregation 중에는 독특하게도 근사치 결과값을 제공하는 경우가 있다. 문서를 확인해서 나중에야 깨닫고 당황하지 않도록 주의해야 한다.
+
+cardinality aggregation
+링크 1 - https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html
+
+percentiles aggregation
+링크 1 - https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html
 
 ### 2.2.3. Kibana
 
-Kibana 는
+# 3. 마주친 어려움과 해결책
 
-...
-
-링크 1 - Better Visualization in Kibana -> https://www.youtube.com/watch?v=g0TQrMv37jM
-링크 1 - Visualization Theory and Vega Charts -> https://www.youtube.com/watch?v=9uAKdpBCeuA
-
-# 3. 구현 과정에서 마주친 어려움
+구현 과정에서 마주친 어려움과 이에 대한 해결책을 공유해보려고 한다.
 
 ## 3.1. 전체적인 흐름
 
@@ -560,15 +371,13 @@ Analytics 서비스에 API 요청이 발생
 
 ## 3.2. 셋업 과정
 
-요즘에는 배포시에 컨테이너 기술을 사용하는 것이 보편화되어 있는 만큼
-개발 과정에서도 Docker 를 사용하면 development, staging, production 환경 간의 호환성을 크게 해치지 않을 수 있다.
+ELK 스택은 Elasticsearch, Logstash, Kibana 세 가지를 각각 셋업하려고 생각하면 쉽지 않다.
+대신에 세 가지 기술 스택을 도커 컨테이너로 묶어서 관리할 수 있다면 훨씬 편리해진다.
 
-**[docker-elk](https://github.com/deviantony/docker-elk) 리포지토리 사용하는 방법**
+docker-elk
+github link: https://github.com/deviantony/docker-elk
 
-링크 - https://github.com/deviantony/docker-elk
-
-docker-elk 는 누구든 ELK 를 도커 컨테이너 환경에 손쉽게 구축할 수 있도록
-최소한의 configuration 만을 제공하는 git 리포지토리이다.
+docker-elk 는 누구든 ELK 를 도커 컨테이너 환경에 손쉽게 구축할 수 있도록 최소한의 configuration 만을 제공하는 git 리포지토리이다.
 
 "Usage" 부분을 잘 읽어보면
 ```bash
@@ -576,41 +385,143 @@ $ docker-compose up setup
 $ docker-compose up
 ```
 이렇게 되어 있는데,
-반드시 setup 스크립트를 실행해서 ELK 스택에서 사용하는 여러가지 프로그램에 대한 셋업을 진행해야하만 정상적으로 사용할 수 있게 된다.
-셋업 과정에서 환경변수를 통해서 주입한 초기 비밀번호를 세팅한다.
-플러그인을 추가하거나 삭제하는 경우에는 yaml 파일, conf 파일을 적절하게 수정하면 된다.
+반드시 setup 스크립트를 먼저 실행해야만 여러가지 초기 세팅, 비밀번호 세팅이 완료된다.
+setup 을 실행하지 않고 바로 `docker-compose up` 만 실행하려고 하면 정상적으로 동작하지 않는다.
+
+컨테이너 기반으로 개발 환경을 구성하는 경우
+dev, test, staging, prod 환경을 거의 동일하게 구성할 수 있어서
+나중에 실행환경의 차이에 따라서만 발생하는 이슈를 최소화할 수 있다.
 
 ## 3.3. Logstash 에 전송할 로그 데이터 형태 결정
 
-event_type: 어떤 종류의 이벤트가 발생했는지 표시하는 필드
+사용자가 어떤 종류의 동작을 취할때마다 이벤트 방식으로 로그를 남기게 된다.
+나중에 elasticsearch 에서 aggregation 할때 어떤 이벤트인지에 따라서 group by 를 하게 된다.
+```javascript
+[
+    {
+        event_type: "sign-in",
+        ...
+    },
+    {
+        event_type: "play-content",
+        ...
+    },
+    {
+        event_type: "purchase",
+        ...
+    },
+]
+```
 
-## 3.4. Elasticsearch 쿼리로 Aggregation 처리하기
+나머지 필드는 자유롭게 바꿔가면서 로그 메시지를 전송하더라도
+elasticsearch 에서 새로운 도큐먼트를 생성할때 오류없이 mapping 을 설정하도록 자동으로 설정하고 있으므로
+지나치게 신경쓰지 않고 필요한만큼 데이터 필드를 추가하면 된다.
 
-통계 및 분석 관점에서는 (1) Frequency, (2) Latency 가 중요한 판단 기준이 된다.
+## 3.4. Frequency 와 Recency 정보의 중요성
 
-## 3.5. 사용자 지정 시간 범위가 커지면서 예상되는 서버쪽 부하 증가
+elasticsearch aggregation 을 사용해서 위에서 언급한 두 개의 정보를 수집할 수 있다.
 
-ELK 에 적재한 데이터를 시간(hour) 단위로, 일(date) 단위로 데이터베이스(MongoDB)에 마이그레이션 해두기
+(1) Frequency 정보는 terms aggregation 을 사용하면 된다.
+```javascript
+// request
+GET my_index_to_look_up/_search
+{
+    size: 0,
+    query: {
+        term: { "event_type": "event_type_to_look_for" }
+    },
+    aggs: {
+        "group_by_event_type": {
+            terms: { field: "event_type.keyword" }
+        }
+    }
+}
 
-## 3.6. 시간단위(1 hour), 일단위(1 day)로 데이터를 적재해두는 데이터베이스 스키마 설계
+// response
+{
+  ...
+  aggregations: {
+    "group_by_event_type": {
+      doc_count_error_upper_bound: 0,
+      sum_other_doc_count: 0,
+      buckets: [
+        {
+          key: "event_type_to_look_for",
+          doc_count:242
+        }
+      ]
+    }
+  }
+}
+```
 
-Visitor 영역과 Content 영역에 대한 통계정보는 데이터 수집(aggregation) 방식이 다르다.
+(2) Latency 정보는 top hits aggregation 을 사용하면 된다.
+```javascript
+GET my_index_to_look_up/_search
+{
+    size: 0,
+    query: {
+        term: { "event_type": "event_type_to_look_for" }
+    },
+    aggs: {
+        "group_by_event_type": {
+            terms: { field: "event_type.keyword" },
+            aggs: {
+                "latest_event_type_to_look_for": {
+                    top_hits: {
+                        sort: [
+                            { "timestamp": { order: "desc" } }
+                        ],
+                        _source: [
+                            "event_type",
+                            "timestamp"
+                        ],
+                        size: 1
+                    }
+                }
+            }
+        }
+    }
+}
+```
 
-### 3.6.1. 사용자(Visitor)에 대한 Analytics
+위에서 timestamp 필드 또한 로그 시스템에서 생성한 데이터이다.
+timestamp 대신에 @timestamp 라는 이름의 필드를 사용해도 된다.
+@timestamp 는 엘라스틱서치에서의 도큐먼트 createdAt 값이다.
+nested aggregation 에서 지정한 { size: 1 } 이 있기 때문에 가장 최신 도큐먼트 한 개만 얻게 된다.
+nested aggregation 에서 { size: 1 } 을 지정하지 않으면 최신부터 내림차순으로 정렬된 배열을 얻게 된다.
+nested aggregation 에서 _source 에 지정하는 만큼 결과값에 필드를 포함하거나 제외할 수 있다.
 
-Visitor 에서는 사용자가 기준점은 아니다.
-메트릭에 따라서는 사용자 타입을 구분하는 것이 중요할 수도 있지만
-사용자 관련 이벤트 전체에 대해서 aggregate 한 결과를 보여주면 된다.
+timestamp 필드에 따라서 가중치를 주는 방법은 아직 없는 것으로 알고 있다.
 
-### 3.6.2. 컨텐츠(Content)에 대한 Analytics
+## 3.5. elasticsearch index 이름을 rolling 해서 사용하기
 
-Content 에서는 통계 및 분석 기준을 한 가지 이상 추가해야 한다.
-컨텐츠마다의 aggregation 실행한 결과가 필요하므로 group by content 를 해야한다.
-컨텐츠가 속한 카테고리를 기준으로 aggregation 실행한 결과도 필요하므로 group by category 를 해야한다.
+elasticsearch 가 NoSQL 이고 schema-less 한 것처럼 소개되는 경우도 있지만
+실제로는 mapping 이라는 명칭의 엄격한 타입 시스템을 갖고 있다.
+그리고 이 mapping 은 인덱스 단위로 설정하게 된다.
+
+ELK 를 활용한 통계성 API 구현을 실무에서 진행하면서
+boolean 타입으로 사용하고 있던 필드를 text, keyword 타입으로 바꿔야할 필요가 있었다.
+그러나 elasticsearch 에서 특정한 필드를 기존과 전혀 다른 타입으로 사용하고 싶다면
+새로운 타입에 맞는 mapping 을 가진 인덱스를 만들어서 기존 데이터를 마이그레이션 하는 방법 밖에 없다.
+
+이런 어려움을 극복하기 위해서
+인덱스 이름을 고정적인 하나의 문자열만 사용하지 않고
+뒤에 무작위 숫자라든지 그 날 그 날의 날짜를 붙여서 데이터를 저장하면
+개별 인덱스를 보다 자유자재로 다룰 수 있게 된다.
+결론적으로 유연한 스키마 설계가 가능해진다.
+
+## 3.6. elasticsearch 쿼리에 대한 캐시 구현
+
+사실 이 부분은 선택의 문제이고 트레이트오프(trade-off) 문제이긴 하지만
+사용자가 확인하려는 통계성 정보의 시간 범위가 작을 때는 별다른 이슈가 안 생기겠지만
+시간 범위가 커질수록 이벤트 단위로 로그를 적재하는 elasticsearch 에서 항상 쿼리를 실행하면
+부하가 과중해질 가능성이 있다고 판단했다.
+
+데이터베이스에 시간(1 hour)단위, 일(1 day)단위로 elasticsearch aggregation 결과를 저장한다.
+이런 방식으로 약간은 부하를 줄일 수 있다고 판단했다.
 
 ## 3.7. 다중 타임존 지원 요구사항
-
-Date 또는 Timestamp 타입의 컬럼은 쿼리 결과에 timezone 적용된 결과값으로 받아오기
 
 꺾은선그래프로 추이를 나타내는 경우 X 축에는 날짜(1일 초과의 기간인 경우) 또는 시간(1일 이하의 기간인 경우)을 표시해야 한다.
 여기서 표시하는 날짜나 시간은 서버의 시간이 아니라 API 를 요청하는 사용자의 로컬 타임존에 맞춰서 표시해야 한다.
@@ -676,6 +587,6 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
 }
 ```
 
-## 3.8. 통계성 API 서버에 장애가 발생했을때 fallback 처리 방식
+## 3.8. 통계성 API 에서의 데이터 보정, 데이터 퀄리티 관리
 
-## 3.9. Analytics 데이터를 다룰때 데이터 보정, 데이터 퀄리티 관리 방식
+## 3.9. API 서버 자체가 중단되는 경우 대처법
