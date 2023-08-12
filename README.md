@@ -4,7 +4,7 @@
 
 * [요구조건 분석](#1-요구조건-분석)
 * [기술 선택](#2-기술-분석)
-* [구현 과정에서 마주친 어려움과 해결책](#3-마주친-어려움과-해결책)
+* [구현 과정에서의 고민과 해결책](#3-고민과-해결책)
 
 # 1. 요구조건 분석
 
@@ -299,13 +299,13 @@ elasticsearch 에서 aggregation 의 특징
 GET my_elastic_index/_search
 {
     aggs: {
-        "my_aggregation_name": {
+        "group_by_user_type": {
             terms: { // group by 쿼리
-                "my_field_name": "value_to_find"
+                field: "user_type"
             },
             aggs: { // nested aggregation 쿼리
-                "nested_aggregation_name": {
-                    sum: { field: "countable_field" }
+                "sum_visit": {
+                    sum: { field: "visit" }
                 }
             }
         }
@@ -319,31 +319,33 @@ GET my_elastic_index/_search
 GET my_elastic_index/_search
 {
     aggs: {
-        "my_aggregation_name_01": {
-            terms: {
-                field: "my_field_name"
-            },
+        "group_by_genre_and_product": {
+            multi_terms: [
+                { field: "genre" },
+                { field: "product" },
+            ],
             aggs: { // nested aggregation 쿼리
-                "nested_aggregation_name": {
-                    sum: { field: "countable_field" }
+                "sum_order_count": {
+                    sum: { field: "order" }
                 }
             }
         },
-        "my_aggregation_name_02": {
+        "group_by_brand": {
             terms: {
-                field: "my_filed_to_search"
+                field: "product_brand"
             },
             aggs: {
-                "my_field_to_sum": { sum: { field: "accumulated_field" } },
-                "my_field_to_average": { avg: { field: "averaged_field" } },
-                "my_field_to_max": { max: { field: "field_to_get_max" } }
+                "sum_purchase_count": { sum: { field: "purchase" } },
+                "average_price": { avg: { field: "price" } },
+                "max_quantity": { max: { field: "quantity" } },
+                "latest_purchase_date": { max: { field: "ordered_at" } }
             }
         }
     }
 }
 ```
 
--> aggregation 중에는 독특하게도 근사치 결과값을 제공하는 경우가 있다. 문서를 확인해서 나중에야 깨닫고 당황하지 않도록 주의해야 한다.
+-> aggregation 중에는 독특하게도 근사치 결과값을 제공하는 경우가 있다. 미리 문서를 확인해서 나중에야 깨닫고 당황하지 않도록 주의해야 한다.
 
 cardinality aggregation
 링크 1 - https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html
@@ -353,7 +355,61 @@ percentiles aggregation
 
 ### 2.2.3. Kibana
 
-# 3. 마주친 어려움과 해결책
+#### 2.2.3.1. 데이터 분류
+
+-> 정량적 데이터(Quantitative Data): 숫자처럼 객관적으로 측정이 가능한 항목 (예시: 길이, 온도, 습도, 가격, 부피, 밀도)
+-> 정성적 데이터(Qualitative Data): 설명이 필요한 성질 등으로 관찰하거나 측량이 어려운 항목 (예시: 향기, 맛, 질감, 매력, 색상)
+
+정량적 데이터는 다시 다음과 같이 분류할 수 있다.
+
+-> 이산 데이터(Discrete Data): 개별 요소를 개수로 카운트하는 항목
+-> 선형 데이터(Continuous Data): 나누거나 분리해서 더 미세한 수준에서 다룰 수 있는 항목 (예시: 센티미터, 킬로그램)
+
+#### 2.2.3.2. Data Visualization Rules
+
+시각화 데이터를 효율적으로 제시하기 위해서 다음과 같은 단계를 따라야 한다.
+
+[ 1 ] Introduce the Graphic by Name
+[ 2 ] Answer the Obvious Questions
+[ 3 ] Give Away the Insight
+[ 4 ] Provide Examples
+[ 5 ] Close
+
+#### 2.2.3.3. Kibana 사용 예시
+
+첫번째 Kibana 에서 제공하는 Discover, Lens, Maps, Canvas 사용하기
+
+Discover
+
+![kibana-01-discover](./images/kibana-01-discover.png)
+
+Dashboard(Lens)
+
+![kibana-02-dashboard](./images/kibana-02-dashboard.png)
+
+Maps
+
+![kibana-03-maps](./images/kibana-03-maps.png)
+
+Canvas
+
+![kibana-04-canvas](./images/kibana-04-canvas.png)
+
+두번째 Vega(Visualization Grammar)를 사용해서 시각화 자료 생성하기
+
+vega homepage: https://vega.github.io/vega/
+
+![kibana-05-vega-charts](./images/kibana-05-vega-charts.png)
+
+세번째 Kibana Dev Tools 에 있는 Console 사용하기
+
+![kibana-06-dev-console](./images/kibana-06-dev-console.png)
+
+API 개발자로서 개발하면서 제일 많이 사용한 것은 여기 Dev Tool Console 이었다.
+
+데이터 사이언스로서 데이터 정제, 데이터 분석 등이 메인 업무가 된다면 Kibana 에서 제공하는 여러가지 시각화 툴을 많이 사용할 것 같다.
+
+# 3. 고민과 해결책
 
 구현 과정에서 마주친 어려움과 이에 대한 해결책을 공유해보려고 한다.
 
@@ -492,7 +548,7 @@ nested aggregation 에서 지정한 { size: 1 } 이 있기 때문에 가장 최�
 nested aggregation 에서 { size: 1 } 을 지정하지 않으면 최신부터 내림차순으로 정렬된 배열을 얻게 된다.
 nested aggregation 에서 _source 에 지정하는 만큼 결과값에 필드를 포함하거나 제외할 수 있다.
 
-timestamp 필드에 따라서 가중치를 주는 방법은 아직 없는 것으로 알고 있다.
+Elasticsearch 쿼리에서 timestamp 와 같은 날짜 필드에 따라서 가중치를 주는 방법은 아직 없는 것으로 알고 있다.
 
 ## 3.5. elasticsearch index 이름을 rolling 해서 사용하기
 
@@ -508,12 +564,13 @@ boolean 타입으로 사용하고 있던 필드를 text, keyword 타입으로 �
 이런 어려움을 극복하기 위해서
 인덱스 이름을 고정적인 하나의 문자열만 사용하지 않고
 뒤에 무작위 숫자라든지 그 날 그 날의 날짜를 붙여서 데이터를 저장하면
+(예시: `analytics_index_102839reakvndc`, `analytics_index_102399eiuvnzkl`, `analytics_index_102451neinvdmap`)
 개별 인덱스를 보다 자유자재로 다룰 수 있게 된다.
 결론적으로 유연한 스키마 설계가 가능해진다.
 
 ## 3.6. elasticsearch 쿼리에 대한 캐시 구현
 
-사실 이 부분은 선택의 문제이고 트레이트오프(trade-off) 문제이긴 하지만
+사실 이 부분은 선택의 문제이고 트레이드오프(trade-off) 문제이긴 하지만
 사용자가 확인하려는 통계성 정보의 시간 범위가 작을 때는 별다른 이슈가 안 생기겠지만
 시간 범위가 커질수록 이벤트 단위로 로그를 적재하는 elasticsearch 에서 항상 쿼리를 실행하면
 부하가 과중해질 가능성이 있다고 판단했다.
@@ -589,4 +646,26 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
 
 ## 3.8. 통계성 API 에서의 데이터 보정, 데이터 퀄리티 관리
 
+accuracy
+validity
+timeliness
+completeness
+uniqueness
+consistency
+
+데이터 퀄리티 관리를 위해서는 다음과 같은 DQ 프로세스를 자동화해서 프로덕트 개발 과정에 포함시켜야 한다.
+
+이 과정에서 앞에서 살펴봤던 Kibana 의 다양한 시각화 툴이 아주 훌륭한 도움이 될 듯 하다.
+
+![data-quality-01-process](./images/data-quality-01-process.png)
+
 ## 3.9. API 서버 자체가 중단되는 경우 대처법
+
+반드시 통계성 API 를 구현하는 데에서만 생기는 고민은 아니고
+모든 백엔드 개발자라면 반드시 하게 되는 고민.
+
+API 서버에 치명적인 오류가 발생해서 서버 자체가 다운되는 현상이 발생하는 경우
+발생하는 모든 트래픽에 대해서 리버스 프록시 또는 로드밸런서에서 별도의 서비스 중단 안내페이지로 리디렉션하고
+오류를 해결해서 서비스를 다시 정상적으로 운영 가능한 상태로 만들고 나면
+모든 트래픽을 다시 원래의 API 서버로 보낸다.
+복구 완료.
