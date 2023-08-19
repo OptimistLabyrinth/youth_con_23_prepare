@@ -116,6 +116,7 @@ NodeJS 에서 사용하기에 보다 편리한 ELK 를 선택한다.
 [ 이유 2 ]
 Hadoop-Spark 에서 데이터를 저장하는 방식은 Wide-Column Database 이고
 Elasticsearch 는 상대적으로 효율적인 Full-Text Search 가 가능한 Search Engine 이다.
+API 구현하는 과정에서 search 와 aggregation 기능을 주로 사용하게 될 것 같아서 ELK 를 선택한다.
 
 [ 이유 3 ]
 제공하려는 서비스가 Big Data Processing 자체에 목적이 있다기 보다는
@@ -133,7 +134,7 @@ Logstash 가 Input 에 해당하고
 Elasticsearch 가 Data Processing 이고
 Kibana 가 Output 에 해당한다.
 
-L -> E -> K 순서로 하나씩 살펴보자.
+순서대로 하나씩 살펴보자.
 
 ### 2.2.1. Logstash 와 Beats
 
@@ -189,7 +190,7 @@ logstash 에 도달하기 전에 logstash 에서 다루기 쉬운 형태로 데�
 
 ![elasticsearch-cluster](./images/elasticsearch-cluster.png)
 
-**document**: 개별 데이터 묶음. RDBMS 에서의 튜플 또는 행(row)과 비슷하다.
+**document**: 개별 데이터 묶음. RDBMS 에서의 튜플 또는 레코드와 비슷하다.
 **index**: 여러 도큐먼트 묶음. RDBMS 에서의 테이블과 비슷하다.
 **node**: 여러 인덱스 묶음.
 **cluster**: 여러 노드의 묶음
@@ -416,14 +417,14 @@ API 개발자로서 개발하면서 제일 많이 사용한 것은 여기 Dev To
 ## 3.1. 전체적인 흐름
 
 [ 데이터 수집 ]
-User 서비스, Content 서비스가 API 수신
--> User 서비스, Content 서비스에서 Logstash 에 이벤트 기반의 로그 데이터 전송
--> Logstash 에서 filter 를 거쳐서 결과적으로 얻어낸 최종 형태로 전달한 데이터를 Elasticsearch 에 저장
--> Elasticsearch 에 저장해뒀던 로그를 1시간 단위로 aggregate 해서 analytics 데이터베이스에 저장
+User 서비스(사용자 데이터), Content 서비스(컨텐츠 데이터) API 요청 수신
+-> User 서비스, Content 서비스에서 통계성 데이터 처리 플랫폼으로 이벤트 기반 로그 전송
+-> 로그 전처리를 거쳐 데이터를 일정한 형태로 저장
+-> 일정한 형태로 저장해둔 데이터를 일정한 시간 간격으로 aggregate 해서 analytics 데이터베이스에 저장
 
-[ API 구현 ]
-Analytics 서비스에 API 요청이 발생
--> analytics 데이터베이스에서 쿼리 실행 후 Analytics 서비스에서 응답 형태에 맞춰서 가공
+[ 통계성 API 요청 처리 ]
+Analytics 서비스(통계성 데이터) API 요청 수신
+-> analytics 데이터베이스에서 쿼리 실행 후 서비스 응답 형태에 맞춰서 가공
 
 ## 3.2. 셋업 과정
 
@@ -459,7 +460,7 @@ dev, test, staging, prod 환경을 거의 동일하게 구성할 수 있어서
         ...
     },
     {
-        event_type: "play-content",
+        event_type: "content-play",
         ...
     },
     {
@@ -473,6 +474,71 @@ dev, test, staging, prod 환경을 거의 동일하게 구성할 수 있어서
 elasticsearch 에서 새로운 도큐먼트를 생성할때 오류없이 mapping 을 설정하도록 자동으로 설정하고 있으므로
 지나치게 신경쓰지 않고 필요한만큼 데이터 필드를 추가하면 된다.
 
+예를 들어서 __컨텐츠 구매__ 이벤트에 대한 로그를 남긴다면
+
+```javascript
+[
+    {
+        event_type: "purchase",
+        user: "user-0001-id",
+        item: "item-0708-id",
+        price: 1900,
+        quantity: 1,
+        timestamp: new Date("2023-08-26T15:00:000Z"),
+    },
+    {
+        event_type: "purchase",
+        user: "user-0020-id",
+        item: "item-0032-id",
+        price: 27000,
+        quantity: 3,
+        timestamp: new Date("2023-08-19T17:25:13.672Z"),
+    },
+    {
+        event_type: "purchase",
+        user: "user-0020-id",
+        item: "item-0708-id",
+        price: 1900,
+        quantity: 5,
+        timestamp: new Date("2023-08-23T02:05:58.903Z"),
+    },
+]
+```
+
+이런식으로 남긴다면 event_type 별로, user 별로, item 별로
+통계 데이터를 확인하는 게 가능하다.
+
+또 다른 예시로 __로그인__ 이벤트에 대한 로그를 남긴다면
+
+```javascript
+[
+    {
+        event_type: "sign-in",
+        user: "user-0101-id",
+        timestamp: new Date("2023-08-01T09:00:05.297Z"),
+        browser: "Chrome",
+        country: "Netherland",
+    },
+    {
+        event_type: "sign-in",
+        user: "user-0202-id",
+        timestamp: new Date("2023-08-10T18:30:27.043Z"),
+        browser: "Safari",
+        country: "Canada",
+    },
+    {
+        event_type: "sign-in",
+        user: "user-0303-id",
+        timestamp: new Date("2023-08-11T114:40:30.505Z"),
+        browser: "Safari",
+        country: "Netherland",
+    },
+]
+```
+
+이런식으로 남긴다면 event_type 별로, user 별로, browser 별로, country 별로
+통계 데이터를 확인하는 게 가능하다.
+
 ## 3.4. Frequency 와 Recency 정보의 중요성
 
 elasticsearch aggregation 을 사용해서 위에서 언급한 두 개의 정보를 수집할 수 있다.
@@ -482,61 +548,151 @@ elasticsearch aggregation 을 사용해서 위에서 언급한 두 개의 정보
 // request
 GET my_index_to_look_up/_search
 {
-    size: 0,
-    query: {
-        term: { "event_type": "event_type_to_look_for" }
-    },
     aggs: {
         "group_by_event_type": {
-            terms: { field: "event_type.keyword" }
+            terms: { field: "event_type.keyword" },
         }
     }
 }
 
 // response
 {
-  ...
-  aggregations: {
-    "group_by_event_type": {
-      doc_count_error_upper_bound: 0,
-      sum_other_doc_count: 0,
-      buckets: [
-        {
-          key: "event_type_to_look_for",
-          doc_count:242
+    ...,
+    aggregations: {
+        "group_by_event_type": {
+            doc_count_error_upper_bound: 0,
+            sum_other_doc_count: 0,
+            buckets: [
+                {
+                    key: "content-play",
+                    doc_count:242,
+                },
+                {
+                    key: "sign-in",
+                    doc_count:59,
+                },
+                {
+                    key: "purchase",
+                    doc_count:4,
+                },
+            ]
         }
-      ]
     }
-  }
 }
 ```
 
-(2) Latency 정보는 top hits aggregation 을 사용하면 된다.
+query 조건문을 추가하고 nested aggregation 쿼리를 요청할 수도 있다.
+
 ```javascript
+// request
 GET my_index_to_look_up/_search
 {
     size: 0,
     query: {
-        term: { "event_type": "event_type_to_look_for" }
+        term: { "event_type": "purchase" }
     },
+    aggs: {
+        "group_by_item": {
+            terms: { field: "item.keyword" },
+            aggs: {
+                "sum_quantity": {
+                    sum: { field: "quantity" },
+                }
+            }
+        }
+    }
+}
+
+// response
+{
+    ...,
+    aggregations: {
+        "group_by_item": {
+            doc_count_error_upper_bound: 0,
+            sum_other_doc_count: 0,
+            buckets: [
+                {
+                    key: "item-0708-id",
+                    doc_count:2,
+                    sum_quantity: { value: 5 },
+                },
+                {
+                    key: "item-0032-id",
+                    doc_count:1,
+                    sum_quantity: { value: 1 },
+                },
+                {
+                    key: "item-0044-id",
+                    doc_count:1,
+                    sum_quantity: { value: 2 },
+                }
+            ]
+        }
+    }
+}
+```
+
+(2) Recency 정보는 top hits aggregation, max aggregation 을 사용하면 된다.
+```javascript
+// request
+GET my_index_to_look_up/_search
+{
     aggs: {
         "group_by_event_type": {
             terms: { field: "event_type.keyword" },
             aggs: {
-                "latest_event_type_to_look_for": {
+                "latest_document_for_each_event_type": {
                     top_hits: {
                         sort: [
-                            { "timestamp": { order: "desc" } }
+                            { "timestamp": { order: "desc" } },
                         ],
+                        size: 1,
                         _source: [
                             "event_type",
-                            "timestamp"
+                            "timestamp",
                         ],
-                        size: 1
+                    }
+                },
+                "latest_timestamp_for_each_event_type": {
+                    max: { field: "timestamp" },
+                }
+            },
+        }
+    }
+}
+
+// response
+{
+    ...,
+    aggregations: {
+        "group_by_event_type": {
+            doc_count_error_upper_bound: 0,
+            sum_other_doc_count: 0,
+            buckets: [
+                {
+                    key: "purchase",
+                    doc_count: 4,
+                    "latest_document_for_each_event_type": {
+                        hits: {
+                            ...,
+                            hits: [
+                                {
+                                    ...,
+                                    _source: {
+                                        event_type: "purchase",
+                                        timestamp: "2023-08-26T15:10:04.011Z",
+                                    },
+                                    ...,
+                                }
+                            ]
+                        }
+                    },
+                    "latest_timestamp_for_each_event_type": {
+                        value: "2023-08-26T15:10:04.011Z",
                     }
                 }
-            }
-        }
+            ]
+        },
     }
 }
 ```
@@ -548,7 +704,7 @@ nested aggregation 에서 지정한 { size: 1 } 이 있기 때문에 가장 최�
 nested aggregation 에서 { size: 1 } 을 지정하지 않으면 최신부터 내림차순으로 정렬된 배열을 얻게 된다.
 nested aggregation 에서 _source 에 지정하는 만큼 결과값에 필드를 포함하거나 제외할 수 있다.
 
-Elasticsearch 쿼리에서 timestamp 와 같은 날짜 필드에 따라서 가중치를 주는 방법은 아직 없는 것으로 알고 있다.
+~~Elasticsearch 쿼리에서 timestamp 와 같은 날짜 필드에 따라서 가중치를 주는 방법은 아직 없는 것으로 알고 있다.~~
 
 ## 3.5. elasticsearch index 이름을 rolling 해서 사용하기
 
@@ -600,8 +756,8 @@ Timestamp 데이터를 다룰때는 ISO String 으로 주고 받는게 골치아
 | 로컬 시간          | 시간대                | 시간차 | UTC               |
 |------------------|---------------------|-------|------------------|
 | 2023-08-26 00:00 | Asia/Seoul          | +9    | 2023-08-25 15:00 |
-| 2023-08-26 11:00 | America/Log_Angeles | -7    | 2023-08-26 04:00 |
-| 2023-08-26 22:00 | Europe/Athens       | +3    | 2023-08-27 01:00 |
+| 2023-08-26 11:00 | America/Log_Angeles | -7    | 2023-08-26 18:00 |
+| 2023-08-26 22:00 | Europe/Athens       | +3    | 2023-08-26 19:00 |
 | 2023-08-27 09:00 | Africa/Abidjan      | +0    | 2023-08-27 09:00 |
 
 현재 사용자가 한국(Asia/Seoul) 시간대에 있다면
@@ -646,12 +802,12 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
 
 ## 3.8. 통계성 API 에서의 데이터 보정, 데이터 퀄리티 관리
 
-accuracy
-validity
-timeliness
-completeness
-uniqueness
-consistency
+accuracy(정확성) - 실세계의 진짜 값을 나타내고 있는지(예시: 오타, 잘못된 입력값 등을 확인)
+validity(유효성) - 정의와 문법에 맞는 값인지
+timeliness(적시성) - 특정한 시점의 데이터가 정확한 값을 나타내고 있는지
+completeness(완전성) - 특정한 값에 해당하는 온전한 데이터를 담고 있는지(예시: 주소를 입력하는데 동호수를 빠뜨리기)
+uniqueness(유일성) - 동일한 항목을 가리키는 데이터를 중복으로 입력하지 않았는지
+consistency(일관성) - 데이터셋 전체에서의 일관성(예시: 특정한 고객이 휴면계정으로 전환한 이후에 해당 고객의 주문 정보가 입력되는 경우)
 
 데이터 퀄리티 관리를 위해서는 다음과 같은 DQ 프로세스를 자동화해서 프로덕트 개발 과정에 포함시켜야 한다.
 
@@ -669,3 +825,5 @@ API 서버에 치명적인 오류가 발생해서 서버 자체가 다운되는 
 오류를 해결해서 서비스를 다시 정상적으로 운영 가능한 상태로 만들고 나면
 모든 트래픽을 다시 원래의 API 서버로 보낸다.
 복구 완료.
+
+![reverse-proxy-flow](./images/reverse-proxy-flow.png)
