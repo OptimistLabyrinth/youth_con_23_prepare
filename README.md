@@ -769,17 +769,17 @@ HTTP Response 에는 "2023-08-26T00:00:00.000Z" 이라고 표시해야 한다.
 mysql 에서 `Asia/Seoul: +09:00` 시간대에 맞춰서 쿼리를 하려면 아래와 같이 하면 된다.
 
 ```sql
-SELECT DATE_FORMAT(CONVERT_TZ(timestamp, '+00:00', '+09:00'), '%Y-%mm-%dd %HH:%ii:%ss');
+SELECT DATE_FORMAT(
+    CONVERT_TZ(timestamp, '+00:00', '+09:00'),
+    '%Y-%mm-%dd %HH:%ii:%ss'
+);
 ```
 
-postgresql 에서 `Europe/Moscow: +03:00` 시간대에 맞춰서 쿼리를 하려면 아래와 같이 하면 된다.
+postgresql 에서 `America/Log_Angeles: -07:00` 시간대에 맞춰서 쿼리를 하려면 아래와 같이 하면 된다.
 
 ```sql
 SELECT TO_CHAR(
-    DATE_TRUNC(
-        'day',
-        TIMESTAMP WITH TIME ZONE '2023-07-11 13:53:05+00'
-    ) AT TIME ZONE 'Europe/Moscow',
+    timestamp AT TIME ZONE 'America/Log_Angeles',
     'YYYY-MM-DD HH24:MI:SS'
 );
 ```
@@ -793,7 +793,7 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
             $dateToString: {
                 format: '%Y-%m-%d %H-%M-%S',
                 date: '$timestamp',
-                timezone: 'America/New_York'
+                timezone: 'America/New_York',
             }
         }
     }
@@ -802,6 +802,12 @@ mongodb 에서 `America/New_York: -05:00` 시간대에 맞춰서 쿼리를 하�
 
 ## 3.8. 통계성 API 에서의 데이터 보정, 데이터 퀄리티 관리
 
+데이터 전략(Data Strategy) 큰 그림
+
+![data-quality-01-data-strategy](./images/data-quality-01-data-strategy.png)
+
+데이터 퀄리티 관련해서 핵심 디멘션
+
 accuracy(정확성) - 실세계의 진짜 값을 나타내고 있는지(예시: 오타, 잘못된 입력값 등을 확인)
 validity(유효성) - 정의와 문법에 맞는 값인지
 timeliness(적시성) - 특정한 시점의 데이터가 정확한 값을 나타내고 있는지
@@ -809,11 +815,13 @@ completeness(완전성) - 특정한 값에 해당하는 온전한 데이터를 �
 uniqueness(유일성) - 동일한 항목을 가리키는 데이터를 중복으로 입력하지 않았는지
 consistency(일관성) - 데이터셋 전체에서의 일관성(예시: 특정한 고객이 휴면계정으로 전환한 이후에 해당 고객의 주문 정보가 입력되는 경우)
 
+![data-quality-02-key-dimensions](./images/data-quality-02-key-dimensions.png)
+
 데이터 퀄리티 관리를 위해서는 다음과 같은 DQ 프로세스를 자동화해서 프로덕트 개발 과정에 포함시켜야 한다.
 
 이 과정에서 앞에서 살펴봤던 Kibana 의 다양한 시각화 툴이 아주 훌륭한 도움이 될 듯 하다.
 
-![data-quality-01-process](./images/data-quality-01-process.png)
+![data-quality-03-process](./images/data-quality-03-process.png)
 
 ## 3.9. API 서버 자체가 중단되는 경우 대처법
 
